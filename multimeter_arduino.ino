@@ -3,10 +3,13 @@
 #include <stdlib.h>
 
 BLEService multimeterService("1101");
-BLECharacteristic latestValue("2101", BLERead|BLENotify, 3);
+BLECharacteristic latestValue("2101", BLERead|BLENotify, 4);
 BLEIntCharacteristic activeSensor("2110", BLERead|BLEWrite);
-unsigned char bytes[3];
+unsigned char bytes[4];
 uint32_t current_sensor = 0;
+// 0 = voltage
+// 1 = Current
+// 2 = Resistance
 
 // Set value to true or false to control if random data is used or not
 bool generate_random = true;
@@ -103,6 +106,7 @@ void loop()
           bytes[2] = 0x04;
         }
       }
+      bytes[3] = 0x00;
       
       Serial.println("Still Connected!");
 
@@ -118,7 +122,7 @@ void loop()
       Serial.println(bytes[1]);
       Serial.println(bytes[2]);
             
-      latestValue.writeValue(bytes, 3);
+      latestValue.writeValue(bytes, 4);
       delay(200);
       
     }
