@@ -2,8 +2,9 @@
 #include <ArduinoBLE.h>
 #include <stdlib.h>
 
-BLEService randomNumberService("1101");
-BLECharacteristic latestRandomValue("2101", BLERead|BLENotify, 3);
+BLEService multimeterService("1101");
+BLECharacteristic latestValue("2101", BLERead|BLENotify, 3);
+BLEIntCharacteristic activeSensor("2110", BLERead|BLEWrite);
 unsigned char bytes[3];
 int current_sensor = 0;
 
@@ -24,9 +25,13 @@ void setup()
   }
   BLE.setLocalName("Bluetooth Multimeter");
   BLE.setDeviceName("Bluetooth Multimeter");
-  BLE.setAdvertisedService(randomNumberService);
-  randomNumberService.addCharacteristic(latestRandomValue);
-  BLE.addService(randomNumberService);
+  BLE.setAdvertisedService(multimeterService);
+  multimeterService.addCharacteristic(latestValue);
+  multimeterService.addCharacteristic(activeSensor);
+  BLE.addService(multimeterService);
+
+
+  activeSensor.writeValue(0);
 
 
   BLE.advertise();
@@ -51,6 +56,8 @@ void loop()
     while(central.connected())
     {
 
+      current_sensor = activeSensor.read();
+
       if(generate_random){
         int random_number = rand();
         random_number = random_number %2;
@@ -64,10 +71,13 @@ void loop()
         }
 
         if(current_sensor == 0){
-          bytes[0] = 0x02;
+          bytes[2] = 0x02;
         }
         if(current_sensor == 1){
-          bytes[0] = 0x03;
+          bytes[2] = 0x03;
+        }
+        if(current_sensor == 2){
+          bytes[2] = 0x04;
         }
         analog_value = output_number * 1000;
         
@@ -79,11 +89,16 @@ void loop()
   
         if(current_sensor == 0){
           analog_value = map(analog_value, 0, 1023, 0, 25000);
-          bytes[0] = 0x02;
+          bytes[2] = 0x02;
         }
         if(current_sensor == 1){
           analog_value = map(analog_value, 0, 1023, -30000, 30000);
-          bytes[0] = 0x03;
+          bytes[2] = 0x03;
+        }
+        if(current_sensor == 2){
+          int sensor_value = map(analog_value, 0, 1023, -30000, 30000);
+          analog_value = 5000/sensor_value;
+          bytes[2] = 0x04;
         }
       }
       
@@ -96,12 +111,12 @@ void loop()
       
 
       bytes[1] = highByte(analog_value);
-      bytes[2] = lowByte(analog_value);
+      bytes[0] = lowByte(analog_value);
       Serial.println(bytes[0]);
       Serial.println(bytes[1]);
       Serial.println(bytes[2]);
             
-      latestRandomValue.writeValue(bytes, 3);
+      latestValue.writeValue(bytes, 3);
       delay(200);
       
     }
