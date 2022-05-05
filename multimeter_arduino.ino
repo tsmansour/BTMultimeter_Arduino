@@ -6,7 +6,7 @@ BLEService multimeterService("1101");
 BLECharacteristic latestValue("2101", BLERead|BLENotify, 3);
 BLEIntCharacteristic activeSensor("2110", BLERead|BLEWrite);
 unsigned char bytes[3];
-int current_sensor = 0;
+uint32_t current_sensor = 0;
 
 // Set value to true or false to control if random data is used or not
 bool generate_random = true;
@@ -55,8 +55,10 @@ void loop()
 
     while(central.connected())
     {
-
-      current_sensor = activeSensor.read();
+      activeSensor.readValue(current_sensor);
+      Serial.println("Current Sensor");
+      Serial.println(current_sensor);
+      
 
       if(generate_random){
         int random_number = rand();
