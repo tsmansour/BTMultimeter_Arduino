@@ -8,18 +8,22 @@ BLECharacteristic latestValue("2101", BLERead|BLENotify, 4);
 BLEIntCharacteristic activeSensor("2110", BLERead|BLEWrite);
 unsigned char bytes[4];
 uint32_t current_sensor = 0;
+
+
 // 0 = voltage
 // 1 = Current
 // 2 = Resistance
 
 // Set value to true or false to control if random data is used or not
-bool generate_random = true;
+bool generate_random = false;
+
 
 void setup()
 {
   // put your setup code here, to run once:
   //Serial.begin(9600);
   //while(!Serial);
+  //attachInterrupt(digitalPinToInterrupt(2), buttonPress, RISING);
   
   // begin initialization
   if (!BLE.begin())
@@ -27,8 +31,8 @@ void setup()
     //Serial.println("starting Bluetooth® Low Energy module failed!");
     while(1);
   }
-  BLE.setLocalName("Bluetooth Multimeter");
-  BLE.setDeviceName("Bluetooth Multimeter");
+  BLE.setLocalName("BMM BLE1");
+  BLE.setDeviceName("BMM BLE1");
   BLE.setAdvertisedService(multimeterService);
   multimeterService.addCharacteristic(latestValue);
   multimeterService.addCharacteristic(activeSensor);
@@ -56,6 +60,8 @@ void loop()
     
     //Serial.print("Connected to central: ");
     //Serial.println(central.address());
+    
+    int lastPress = millis();
 
     while(central.connected())
     {
@@ -95,21 +101,31 @@ void loop()
   
         if(current_sensor == 0){
           analog_value = map(analog_value, 0, 1023, 0, 25000);
+          analog_value = analog_value*(3.3/5);
           bytes[2] = 0x02;
         }
         if(current_sensor == 1){
           analog_value = map(analog_value, 0, 1023, -30000, 30000);
+          analog_value = analog_value*(5/3.3);
           bytes[2] = 0x03;
         }
         if(current_sensor == 2){
-          int sensor_value = map(analog_value, 0, 1023, -30000, 30000);
-          analog_value = 5000/sensor_value;
+          int sensor_value = map(analog_value, 0, 1023, 0, 3300);
+          //Serial.println(sensor_value);
+          if(sensor_value != 0){
+            analog_value = (10000 * (3300 - sensor_value))/sensor_value;
+          }else{
+            analog_value = -1;
+          }
+          
           bytes[2] = 0x04;
         }
       }
       bytes[3] = 0x00;
       
       //Serial.println("Still Connected!");
+
+      //Serial.println(current_sensor);
 
       
 
@@ -124,8 +140,23 @@ void loop()
       //Serial.println(bytes[2]);
             
       latestValue.writeValue(bytes, 4);
-      delay(200);
-      
+      delay(100);
+
+      if(analogRead(7) > 500){
+        
+        //Serial.println("BUTTON PRESS");
+        if(millis() - lastPress > 600){
+          if(current_sensor == 0){
+            current_sensor = 1;
+          }else if(current_sensor == 1){
+            current_sensor = 2;
+          }else if(current_sensor == 2){
+            current_sensor = 0;
+          }
+          lastPress = millis();
+          activeSensor.writeValue(current_sensor);
+        }
+      }
     }
 
     //Serial.print("Disconnected from central: ");
