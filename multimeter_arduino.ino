@@ -4,9 +4,9 @@
 //#include <ArduinoUniqueID.h>
 
 BLEService multimeterService("1101");
-BLECharacteristic latestValue("2101", BLERead|BLENotify, 4);
+BLECharacteristic latestValue("2101", BLERead|BLENotify, 8);
 BLEIntCharacteristic activeSensor("2110", BLERead|BLEWrite);
-unsigned char bytes[4];
+unsigned char bytes[8];
 uint32_t current_sensor = 0;
 
 
@@ -54,14 +54,13 @@ void loop()
 
   if(central)
   {
-    int output_number = 30;
-    int analog_value;
+    int output_number1 = 30;
+    int output_number2 = 30;
+    int output_number3 = 30;
     
     
     //Serial.print("Connected to central: ");
     //Serial.println(central.address());
-    
-    int lastPress = millis();
 
     while(central.connected())
     {
@@ -71,57 +70,76 @@ void loop()
       
 
       if(generate_random){
-        int random_number = rand();
-        random_number = random_number %2;
-        switch(random_number){
+        int random_number1 = rand() % 2;
+        int random_number2 = rand() % 2;
+        int random_number3 = rand() % 2;
+        switch(random_number1){
           case 0:
-            output_number += 1;
+            output_number1 += 1;
             break;
           case 1:
-            output_number -= 1;
+            output_number1 -= 1;
+            break;
+        }
+        switch(random_number2){
+          case 0:
+            output_number2 += 1;
+            break;
+          case 1:
+            output_number2 -= 1;
+            break;
+        }
+        switch(random_number3){
+          case 0:
+            output_number3 += 1;
+            break;
+          case 1:
+            output_number3 -= 1;
             break;
         }
 
-        if(current_sensor == 0){
-          bytes[2] = 0x02;
-        }
-        if(current_sensor == 1){
-          bytes[2] = 0x03;
-        }
-        if(current_sensor == 2){
-          bytes[2] = 0x04;
-        }
-        analog_value = output_number * 1000;
+        bytes[5] = highByte(random_number3);
+        bytes[4] = lowByte(random_number3);
+        bytes[3] = highByte(random_number2);
+        bytes[2] = lowByte(random_number2);
+        bytes[1] = highByte(random_number1);
+        bytes[0] = lowByte(random_number1);
+
+        
         
       }else{
         //Serial.println("Analog Read!");
-        analog_value = analogRead(current_sensor);
+        
         //Serial.println(analog_value);
         
-  
-        if(current_sensor == 0){
-          analog_value = map(analog_value, 0, 1023, 0, 25000);
-          analog_value = analog_value*(3.3/5);
-          bytes[2] = 0x02;
+        // Voltage
+        int voltage_value = analogRead(0);
+        voltage_value = map(voltage_value, 0, 1023, 0, 25000);
+        voltage_value = voltage_value*(3.3/5);
+        
+        // Current
+        int current_value = analogRead(1);
+        current_value = map(current_value, 0, 1023, -30000, 30000);
+        current_value = current_value*(5/3.3);
+
+        // Resistance
+        int resistance_value = analogRead(2);
+        int sensor_value = map(resistance_value, 0, 1023, 0, 3300);
+        if(sensor_value != 0){
+          resistance_value = (10000 * (3300 - sensor_value))/sensor_value;
+        }else{
+          resistance_value = -1;
         }
-        if(current_sensor == 1){
-          analog_value = map(analog_value, 0, 1023, -30000, 30000);
-          analog_value = analog_value*(5/3.3);
-          bytes[2] = 0x03;
-        }
-        if(current_sensor == 2){
-          int sensor_value = map(analog_value, 0, 1023, 0, 3300);
-          //Serial.println(sensor_value);
-          if(sensor_value != 0){
-            analog_value = (10000 * (3300 - sensor_value))/sensor_value;
-          }else{
-            analog_value = -1;
-          }
+
+
+        bytes[5] = highByte(resistance_value);
+        bytes[4] = lowByte(resistance_value);
+        bytes[3] = highByte(current_value);
+        bytes[2] = lowByte(current_value);
+        bytes[1] = highByte(voltage_value);
+        bytes[0] = lowByte(voltage_value);
           
-          bytes[2] = 0x04;
-        }
       }
-      bytes[3] = 0x00;
       
       //Serial.println("Still Connected!");
 
@@ -131,32 +149,14 @@ void loop()
 
       //Serial.println("Converted Analog Read!");
       //Serial.println(analog_value);
-      
 
-      bytes[1] = highByte(analog_value);
-      bytes[0] = lowByte(analog_value);
-      //Serial.println(bytes[0]);
-      //Serial.println(bytes[1]);
-      //Serial.println(bytes[2]);
+      bytes[7] = 0x0;
+      bytes[6] = 0x0;
+      
             
-      latestValue.writeValue(bytes, 4);
+      latestValue.writeValue(bytes, 8);
       delay(100);
 
-      if(analogRead(7) > 500){
-        
-        //Serial.println("BUTTON PRESS");
-        if(millis() - lastPress > 600){
-          if(current_sensor == 0){
-            current_sensor = 1;
-          }else if(current_sensor == 1){
-            current_sensor = 2;
-          }else if(current_sensor == 2){
-            current_sensor = 0;
-          }
-          lastPress = millis();
-          activeSensor.writeValue(current_sensor);
-        }
-      }
     }
 
     //Serial.print("Disconnected from central: ");
