@@ -98,12 +98,12 @@ void loop()
             break;
         }
 
-        bytes[5] = highByte(random_number3);
-        bytes[4] = lowByte(random_number3);
-        bytes[3] = highByte(random_number2);
-        bytes[2] = lowByte(random_number2);
-        bytes[1] = highByte(random_number1);
-        bytes[0] = lowByte(random_number1);
+        bytes[5] = highByte(output_number3);
+        bytes[4] = lowByte(output_number3);
+        bytes[3] = highByte(output_number2);
+        bytes[2] = lowByte(output_number2);
+        bytes[1] = highByte(output_number1);
+        bytes[0] = lowByte(output_number1);
 
         
         
