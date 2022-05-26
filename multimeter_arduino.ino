@@ -98,12 +98,16 @@ void loop()
             break;
         }
 
-        bytes[5] = highByte(output_number3);
-        bytes[4] = lowByte(output_number3);
-        bytes[3] = highByte(output_number2);
-        bytes[2] = lowByte(output_number2);
-        bytes[1] = highByte(output_number1);
-        bytes[0] = lowByte(output_number1);
+        int result_output1 = output_number1 * 1000;
+        int result_output2 = output_number2 * 1000;
+        int result_output3 = output_number3 * 1000;
+
+        bytes[5] = highByte(result_output3);
+        bytes[4] = lowByte(result_output3);
+        bytes[3] = highByte(result_output2);
+        bytes[2] = lowByte(result_output2);
+        bytes[1] = highByte(result_output1);
+        bytes[0] = lowByte(result_output1);
 
         
         
