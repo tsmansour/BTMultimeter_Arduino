@@ -24,6 +24,9 @@ void setup()
   //Serial.begin(9600);
   //while(!Serial);
   //attachInterrupt(digitalPinToInterrupt(2), buttonPress, RISING);
+
+
+  pinMode(LED_BUILTIN, OUTPUT);
   
   // begin initialization
   if (!BLE.begin())
@@ -64,6 +67,7 @@ void loop()
 
     while(central.connected())
     {
+      digitalWrite(LED_BUILTIN, HIGH);
       activeSensor.readValue(current_sensor);
       //Serial.println("Current Sensor");
       //Serial.println(current_sensor);
@@ -162,6 +166,7 @@ void loop()
       delay(100);
 
     }
+    digitalWrite(LED_BUILTIN, LOW);
 
     //Serial.print("Disconnected from central: ");
     //Serial.println(central.address());
