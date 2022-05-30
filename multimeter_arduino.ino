@@ -1,4 +1,3 @@
-
 #include <ArduinoBLE.h>
 #include <stdlib.h>
 //#include <ArduinoUniqueID.h>
@@ -8,6 +7,9 @@ BLECharacteristic latestValue("2101", BLERead|BLENotify, 8);
 BLEIntCharacteristic activeSensor("2110", BLERead|BLEWrite);
 unsigned char bytes[8];
 uint32_t current_sensor = 0;
+int ledPinR = 5;
+int ledPinG = 6;
+int ledPinB = 7;
 
 
 // 0 = voltage
@@ -27,6 +29,9 @@ void setup()
 
 
   pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(ledPinR, OUTPUT);
+  pinMode(ledPinG, OUTPUT);
+  pinMode(ledPinB, OUTPUT);
   
   // begin initialization
   if (!BLE.begin())
@@ -47,6 +52,11 @@ void setup()
 
   BLE.advertise();
   //Serial.println("Bluetooth device active, waiting for connections...");
+
+  // Set LED Blue
+  analogWrite(ledPinR, 0);
+  analogWrite(ledPinG, 0);
+  analogWrite(ledPinB, 255);
 }
 
 void loop()
@@ -67,6 +77,10 @@ void loop()
 
     while(central.connected())
     {
+      // Set LED Green
+      analogWrite(ledPinR, 0);
+      analogWrite(ledPinG, 255);
+      analogWrite(ledPinB, 0);
       digitalWrite(LED_BUILTIN, HIGH);
       activeSensor.readValue(current_sensor);
       //Serial.println("Current Sensor");
@@ -166,6 +180,10 @@ void loop()
       delay(100);
 
     }
+    // Set LED Blue
+    analogWrite(ledPinR, 0);
+    analogWrite(ledPinG, 0);
+    analogWrite(ledPinB, 255);
     digitalWrite(LED_BUILTIN, LOW);
 
     //Serial.print("Disconnected from central: ");
